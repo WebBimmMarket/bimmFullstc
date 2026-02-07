@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>BIMM MARKET — Admin</title>
+  <meta name="theme-color" content="#0b1220" />
+  
+
+<link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo-round" title="BIMM MARKET"></div>
+      <div>
+        <h1>BIMM MARKET — Admin</h1>
+        <div class="small-muted">Kelola produk • kategori • about • pengumuman • banner • WA • kontak • managers</div>
+      </div>
+    </div>
+    <div class="actions" style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button onclick="collapseAllCards()" class="secondary" title="Tutup semua section">📦 Tutup Semua</button>
+      <button onclick="expandAllCards()" class="secondary" title="Buka semua section">📂 Buka Semua</button>
+      <a href="./index.html"><button class="primary">🏬 Toko</button></a>
+      <button id="logoutBtn" class="danger" style="display:none">🚪 Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- loader & toast -->
+    <div id="loader" class="card small-muted" style="display:none">Memproses... Harap tunggu.</div>
+    <div id="toastAdmin" class="card small" style="display:none;position:fixed;right:12px;bottom:12px;z-index:600">Pesan</div>
+
+    <!-- LOGIN -->
+    <div id="loginCard" class="card">
+      <h3>🔐 Login Admin</h3>
+      <div class="row" style="margin-top:8px">
+        <input id="loginEmail" type="email" placeholder="Email admin" autocomplete="username" style="flex:1"/>
+        <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password" style="flex:1"/>
+        <button id="loginBtn" class="primary">Masuk</button>
+      </div>
+      <div id="loginErr" class="small" style="display:none;margin-top:8px;color:var(--danger)"></div>
+    </div>
+
+    <!-- ADMIN UI -->
+    <div id="adminUI" style="display:none">
+      
+      <!-- WELCOME / BANNER -->
+      <div class="card" id="cardWelcome">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>🏠 Welcome / Banner (Homepage)</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="small" style="margin-top:4px">Upload banner ke Cloudinary atau isi URL.</div>
+        <div class="row" style="margin-top:8px">
+          <input id="welcomeTitle" placeholder="Judul (mis. Selamat datang di BIMM Market)" style="flex:1"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="welcomeSubtitle" placeholder="Subjudul singkat (opsional)" style="flex:1"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label class="secondary" style="padding:8px 12px;cursor:pointer">📤 Upload Gambar
+            <input id="welcomeFile" type="file" accept="image/*" style="display:none"/>
+          </label>
+          <input id="welcomeImageUrl" placeholder="Atau URL gambar (https://...)" style="flex:1"/>
+          <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="welcomeActive"/> Aktif</label>
+        </div>
+        <img id="welcomePreview" class="banner-preview" style="display:none" alt="Preview banner"/>
+        <div class="progress" id="welcomeProgress" style="display:none"><i></i></div>
+        <div class="row" style="margin-top:10px">
+          <button id="welcomeSaveBtn" class="primary">💾 Simpan Banner</button>
+          <button id="welcomeClearBtn" class="secondary">Bersihkan Kolom</button>
+        </div>
+        <div id="welcomeNote" class="small" style="margin-top:6px;color:var(--muted)"></div>
+        </div><!-- end card-content -->
+      </div>
+
+      <!-- Tambah Produk -->
+      <div class="card-content">
+  
+  <!-- Discount Calculator -->
+  <div style="background:rgba(253,203,110,0.08); border:1px solid rgba(253,203,110,0.3); border-radius:10px; padding:12px; margin-bottom:12px;">
+    <h4 style="margin:0 0 10px 0; font-size:13px; color:var(--accent1);">🧮 Kalkulator Diskon</h4>
+    <div class="small" style="margin-bottom:8px; color:var(--muted);">Hitung otomatis harga setelah diskon</div>
+    
+    <div class="row" style="margin-top:8px;">
+      <div style="flex:1;">
+        <label class="small">Harga Asli</label>
+        <input id="discountCalcOriginal" type="number" placeholder="100000" style="width:100%;"/>
+      </div>
+      <div style="flex:1;">
+        <label class="small">Diskon (%)</label>
+        <input id="discountCalcPercent" type="number" min="1" max="100" placeholder="20" style="width:100%;"/>
+      </div>
+    </div>
+    
+    <div style="margin-top:12px; padding:12px; background:rgba(46,204,113,0.1); border:1px solid rgba(46,204,113,0.3); border-radius:8px; text-align:center;">
+      <div class="small" style="margin-bottom:6px; color:var(--muted);">Harga Setelah Diskon:</div>
+      <div id="discountCalcFinal" style="font-size:18px; font-weight:bold; color:var(--success);">Rp 0</div>
+    </div>
+    
+    <button id="btnApplyDiscount" class="primary" style="width:100%; margin-top:10px;">
+      ✅ Terapkan ke Form
+    </button>
+  </div>
+  
+  <div class="row" style="margin-top:8px">
+    <select id="adminCategory" style="flex:1"></select>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <input id="adminName" placeholder="Nama produk" style="flex:1"/>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <input id="adminPrice" placeholder="Harga (angka)" style="flex:1"/>
+    <input id="adminStock" placeholder="Stock (angka / Available)" style="width:170px"/>
+  </div>
+  <!-- Gambar -->
+  <div class="row" style="margin-top:8px">
+    <label class="secondary" style="padding:8px 12px;cursor:pointer">📷 Upload Gambar
+      <input id="productImage" type="file" accept="image/*" style="display:none"/>
+    </label>
+    <input id="productImageUrl" placeholder="Atau URL gambar (https://...)" style="flex:1"/>
+  </div>
+  <img id="imagePreview" class="img-preview" style="display:none" alt="Preview produk"/>
+  <div class="progress" id="productProgress" style="display:none"><i></i></div>
+  <!-- Diskon -->
+  <div class="row" style="margin-top:8px">
+    <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="adminDiscountActive"/> Diskon aktif?</label>
+    <input id="adminDiscountPercent" type="number" min="0" max="100" placeholder="Diskon % (0-100)" style="width:170px"/>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <input id="adminDiscountStart" type="datetime-local" style="flex:1" placeholder="Mulai"/>
+    <input id="adminDiscountEnd" type="datetime-local" style="flex:1" placeholder="Selesai"/>
+  </div>
+  <div id="uploadMsg" class="small" style="margin-top:6px"></div>
+  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+    <button id="adminAdd" class="primary">➕ Tambah</button>
+    <button id="adminAddQuick" class="secondary">➕ Tambah (Tanpa Gambar)</button>
+    <button id="btnAddToBulk" class="secondary" style="background:rgba(91,140,255,0.2); border:1px solid #5b8cff; color:#5b8cff;">
+      📦 Tambah ke Daftar Bulk
+    </button>
+    <button id="clearAdd" class="muted">Bersihkan Form</button>
+  </div>
+  
+  <!-- Bulk Add Toggle -->
+  <div style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px;">
+    <button id="bulkAddToggle" class="secondary" style="width:100%; background:rgba(91,140,255,0.15); border:1px solid #5b8cff; color:#5b8cff;">
+      📦 Bulk Add Produk
+    </button>
+  </div>
+  
+  <!-- Bulk Add Panel -->
+  <div id="bulkAddPanel" style="display:none; margin-top:12px; padding:12px; background:rgba(91,140,255,0.05); border:1px solid rgba(91,140,255,0.2); border-radius:10px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h4 style="margin:0; font-size:13px; color:#5b8cff;">
+        📦 Daftar Produk (<span id="bulkCount">0</span>)
+      </h4>
+      <div style="display:flex; gap:8px;">
+        <button id="btnClearBulk" class="muted" style="padding:6px 10px; font-size:11px;">Bersihkan</button>
+        <button id="btnSaveBulk" class="primary" style="padding:6px 12px; font-size:11px;">💾 Simpan Semua</button>
+      </div>
+    </div>
+    
+    <div class="small" style="color:var(--muted); margin-bottom:10px;">
+      💡 Tambahkan produk satu per satu ke daftar, lalu klik "Simpan Semua" untuk menyimpan sekaligus.
+    </div>
+    
+    <div id="bulkProductList" style="max-height:320px; overflow-y:auto;">
+      <div style="color:var(--muted); padding:12px; text-align:center;">Belum ada produk di daftar</div>
+    </div>
+  </div>
+  
+</div><!-- end card-content -->
+</div>
+
+      <!-- Kategori -->
+      <div class="card" id="cardCategory">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>🏷️ Kategori</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="row" style="margin-top:8px">
+          <input id="newCategoryKey" placeholder="Key kategori (contoh: fruit-permanent)" style="flex:1"/>
+          <input id="newCategoryName" placeholder="Label kategori" style="flex:1"/>
+        </div>
+        <div class="row" style="margin-top:8px; align-items:center; gap:10px">
+          <label style="display:flex;align-items:center;gap:8px;flex:0 0 auto">
+            <input type="checkbox" id="newCategoryIsMain"/>
+            Kategori Utama (FF/ML/Roblox/dll)
+          </label>
+          <input id="newCategoryMatchKeywords" placeholder="Kata kunci auto-sub (pisahkan koma). Contoh: ff, free fire" style="flex:1"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="newCategoryOrder" placeholder="Order (angka)" type="number" style="width:140px"/>
+          <button id="addCategoryBtn" class="primary">Tambah Kategori</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label class="secondary" style="padding:8px 12px;cursor:pointer">📤 Upload Ikon Kategori (opsional)
+            <input id="newCategoryIconFile" type="file" accept="image/*" style="display:none"/>
+          </label>
+          <input id="newCategoryIconUrl" placeholder="Atau URL ikon (opsional)" style="flex:1"/>
+        </div>
+        <div style="margin-top:10px">
+          <h4 style="margin:8px 0 6px 0">Kelola Kategori</h4>
+          <div id="categoryList" class="small">Memuat daftar kategori...</div>
+        </div>
+        </div><!-- end card-content -->
+      </div>
+
+      <!-- About -->
+      <div class="card" id="cardAbout">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>ℹ️ Kelola About</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="row" style="margin-top:8px">
+          <input id="aboutTitle" placeholder="Judul (mis. WhatsApp Channel)" style="flex:1"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="aboutSub" placeholder="Subjudul (mis. Klik untuk join)" style="flex:1"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="aboutIcon" placeholder="Icon (emoji atau URL gambar kecil)" style="flex:1"/>
+          <input id="aboutUrl" placeholder="URL tujuan (https://...)" style="flex:1"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label class="secondary" style="padding:8px 12px;cursor:pointer">📤 Upload Icon/Gambar
+            <input id="aboutIconFile" type="file" accept="image/*" style="display:none"/>
+          </label>
+          <div id="aboutIconMsg" class="small" style="color:var(--muted)"></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="aboutOrder" placeholder="Order (angka)" type="number" style="width:140px"/>
+          <button id="aboutAddBtn" class="primary">➕ Tambah About</button>
+          <button id="aboutClearBtn" class="muted">Bersihkan</button>
+        </div>
+        <div style="margin-top:10px">
+          <h4 style="margin:8px 0 6px 0">Daftar About</h4>
+          <div id="aboutList" class="small">Memuat...</div>
+        </div>
+        </div><!-- end card-content -->
+      </div>
+
+      <!-- Pengumuman -->
+      <div class="card" id="cardAnnouncement">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>📣 Kelola Pengumuman</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="row" style="margin-top:8px">
+          <input id="announcementTitle" placeholder="Judul pengumuman" style="flex:1"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="announcementBody" placeholder="Isi singkat pengumuman" style="flex:1"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="announcementImage" placeholder="URL gambar (opsional)" style="flex:1"/>
+          <input id="announcementOrder" placeholder="Order (angka)" type="number" style="width:140px"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label class="secondary" style="padding:8px 12px;cursor:pointer">📤 Upload Gambar
+            <input id="announcementImageFile" type="file" accept="image/*" style="display:none"/>
+          </label>
+          <div id="announcementImageMsg" class="small" style="color:var(--muted)"></div>
+        </div>
+        <div style="margin-top:8px">
+          <button id="announcementAddBtn" class="primary">➕ Tambah Pengumuman</button>
+        </div>
+        <div style="margin-top:12px">
+          <h4 style="margin:8px 0 6px 0">Daftar Pengumuman</h4>
+          <div id="announcementList" class="small">Memuat...</div>
+        </div>
+        </div><!-- end card-content -->
+      </div>
+
+      <!-- WA Admins -->
+      <div class="card" id="cardWA">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>📱 WA Admins (Dinamis)</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="row" style="margin-top:8px">
+          <input id="waNumber" placeholder="No. WA (contoh: 6289... tanpa +)" style="flex:1"/>
+          <input id="waLabel" placeholder="Label (mis. Admin 1)" style="width:140px"/>
+        </div>
+        <div style="margin-top:8px">
+          <button id="waAddBtn" class="primary">➕ Tambah WA Admin</button>
+        </div>
+        <div style="margin-top:12px">
+          <h4 style="margin:8px 0 6px 0">Daftar WA Admin</h4>
+          <div id="waList" class="small">Memuat...</div>
+        </div>
+        </div><!-- end card-content -->
+      </div>
+
+      <!-- Kontak / Sosial -->
+      <div class="card" id="cardContact">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>🔗 Kontak / Social Links</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="row" style="margin-top:8px">
+          <select id="contactType" style="width:160px">
+            <option value="instagram">Instagram</option>
+            <option value="tiktok">TikTok</option>
+            <option value="facebook">Facebook</option>
+            <option value="link">Link Lain</option>
+          </select>
+          <input id="contactLabel" placeholder="Label tombol (mis. IG Store)" style="flex:1"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="contactUrl" placeholder="URL penuh (https://...)" style="flex:1"/>
+          <input id="contactOrder" type="number" placeholder="Order" style="width:120px"/>
+        </div>
+        <div style="margin-top:8px">
+          <button id="contactAddBtn" class="primary">➕ Tambah Link</button>
+        </div>
+        <div style="margin-top:12px">
+          <h4 style="margin:8px 0 6px 0">Daftar Link</h4>
+          <div id="contactList" class="small">Memuat...</div>
+        </div>
+        </div><!-- end card-content -->
+      </div>
+
+      <!-- Managers -->
+      <div class="card" id="cardManagers">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>👥 Pengelola (Managers)</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="row" style="margin-top:8px">
+          <input id="managerUid" placeholder="UID pengguna (auth uid)" style="flex:1"/>
+          <input id="managerLabel" placeholder="Label (opsional)" style="width:140px"/>
+        </div>
+        <div style="margin-top:8px">
+          <button id="managerAddBtn" class="primary">➕ Tambah Pengelola</button>
+        </div>
+        <div style="margin-top:12px">
+          <h4 style="margin:8px 0 6px 0">Daftar Pengelola</h4>
+          <div id="managerList" class="small">Memuat...</div>
+        </div>
+        </div><!-- end card-content -->
+      </div>
+
+      <!-- Peringkat Pelanggan -->
+      <div class="card" id="cardRanking">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>🏅 Peringkat Pelanggan</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="small" style="margin-top:6px">Atur tampilan peringkat, hadiah, dan preview.</div>
+        <div class="row" style="margin-top:8px;align-items:center">
+          <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="rankBlur"/> Blur nama & nominal</label>
+          <div style="margin-left:12px">Max Peringkat:</div>
+          <input id="rankMax" type="number" min="1" max="10" value="5" style="width:80px;margin-left:8px"/>
+          <button id="rankSave" class="primary" style="margin-left:auto">Simpan Pengaturan</button>
+          <button id="rankGenerateBtn" class="secondary" style="margin-left:8px">Generate dari Orders</button>
+        </div>
+        <div style="margin-top:12px">
+          <h4>Manual Peringkat (opsional)</h4>
+          <div class="small">Tambah entry manual untuk override atau menampilkan daftar peringkat tertentu.</div>
+          <div class="row" style="margin-top:8px">
+            <input id="rankManualName" placeholder="Nama" style="flex:1"/>
+            <input id="rankManualId" placeholder="Identifier (email/no WA)" style="width:180px"/>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <input id="rankManualTotal" placeholder="Total nominal (angka)" style="flex:1"/>
+            <input id="rankManualPos" placeholder="Posisi (opsional)" style="width:140px"/>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button id="rankManualAdd" class="primary">Tambah Manual</button>
+            <button id="rankManualClear" class="muted">Bersihkan</button>
+          </div>
+          <div style="margin-top:12px">
+            <h4>Daftar Manual</h4>
+            <div class="table-wrap">
+              <table class="rank-manual-table">
+                <thead>
+                  <tr>
+                    <th>#</th><th>Nama</th><th>Nomor</th><th>Nominal</th><th>Hadiah</th><th>Posisi</th><th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="rankManualTableBody">
+                  <tr><td colspan="7" style="color:var(--muted);padding:12px">Belum ada manual entry.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <h4>Preview</h4>
+            <div id="rankPreview" class="rank-list">
+              <div style="color:var(--muted)">Belum ada data peringkat. Tambahkan manual entry atau pastikan koleksi orders tersedia.</div>
+            </div>
+          </div>
+        </div>
+        </div><!-- end card-content -->
+      </div>
+
+      <!-- Orders / Pesanan Masuk -->
+      <div class="card" id="cardOrders">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>🧾 Orders Masuk</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="small">Klik salah satu order untuk melihat detail, isi data pesanan, dan mengubah status (realtime).</div>
+        <div class="row" style="margin-top:10px; gap:10px; flex-wrap:wrap">
+          <select id="orderFilterStatus" style="flex:1; min-width:180px">
+            <option value="all">Semua Status</option>
+            <option value="pending">PENDING</option>
+            <option value="paid">PAID</option>
+            <option value="proses">PROSES</option>
+            <option value="selesai">SELESAI</option>
+            <option value="canceled">CANCELED</option>
+          </select>
+          <button id="refreshOrdersBtn" class="secondary" style="flex:0 0 auto">🔄 Refresh</button>
+        </div>
+        <div style="margin-top:10px; overflow:auto; max-height: 340px; border:1px solid rgba(255,255,255,0.06); border-radius:12px">
+          <table class="tbl" style="width:100%; border-collapse:collapse">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:10px">Waktu</th>
+                <th style="text-align:left; padding:10px">Ringkas</th>
+                <th style="text-align:left; padding:10px">Status</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTbody">
+              <tr><td colspan="3" style="padding:12px; color:var(--muted)">Belum ada order.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        </div><!-- end card-content -->
+      </div>
+
+      <!-- Modal detail order (UPDATED) -->
+      <div class="backdrop" id="orderModalBackdrop" style="display:none">
+        <div class="modal" style="max-width:560px">
+          <div class="row" style="justify-content:space-between; align-items:center">
+            <h3 style="margin:0">Detail Order</h3>
+            <button id="orderModalClose" class="secondary">Tutup</button>
+          </div>
+          <div class="modal-body" style="margin-top:10px">
+            <div class="small" id="orderModalMeta"></div>
+            <div class="row" style="margin-top:10px; gap:10px">
+              <div style="flex:1">
+                <div class="small">Nama</div>
+                <div id="orderModalName" style="font-weight:800"></div>
+              </div>
+              <div style="flex:1">
+                <div class="small">Email</div>
+                <div id="orderModalEmail" style="word-break:break-all"></div>
+              </div>
+            </div>
+            <div class="row" style="margin-top:10px; gap:10px">
+              <div style="flex:1">
+                <div class="small">WhatsApp</div>
+                <div id="orderModalWa"></div>
+              </div>
+              <div style="flex:1">
+                <div class="small">Metode Bayar</div>
+                <div id="orderModalPay"></div>
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <div class="small">Item</div>
+              <div id="orderModalItems" class="small" style="margin-top:6px; white-space:pre-wrap"></div>
+            </div>
+            <!-- ✅ SECTION BARU: Catatan dari Buyer -->
+    <div style="margin-top:12px" id="orderNotesSection">
+      <div class="small">Catatan dari Buyer</div>
+      <div id="orderModalNotes" style="margin-top:6px; padding:10px; background:rgba(255,224,102,0.08); border:1px solid rgba(255,224,102,0.3); border-radius:8px; font-size:11px; color:var(--text); white-space:pre-wrap; word-break:break-word; min-height:40px;">
+        -
+      </div>
+    </div>
+            <div style="margin-top:12px">
+  <div class="small" style="margin-bottom:6px">Bukti Pembayaran</div>
+  <a id="orderModalProofLink" 
+     href="#" 
+     target="_blank" 
+     rel="noopener" 
+     style="display:inline-block; padding:8px 12px; border-radius:8px; background:rgba(253,203,110,0.15); color:var(--accent1); font-size:13px; text-decoration:none; border:1px solid rgba(253,203,110,0.3); margin-bottom:8px;">
+    🔗 Buka Bukti (Tab Baru)
+  </a>
+  <!-- Thumbnail preview kecil -->
+  <div style="margin-top:8px">
+    <img id="orderModalProofImg" 
+         alt="Preview bukti" 
+         style="max-width:200px; max-height:200px; object-fit:contain; border-radius:8px; border:1px solid rgba(255,255,255,0.06); cursor:pointer; display:none"/>
+  </div>
+</div>
+            
+            <!-- FITUR BARU: INPUT DATA PESANAN -->
+            <div style="margin-top:16px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top:12px;">
+              <div class="small" style="color:var(--accent1); font-weight:bold;">🎮 Data Pesanan (Akun/Redeem Code)</div>
+              <div class="small" style="color:var(--muted); margin-bottom:4px">Isi ini jika status diubah menjadi Proses/Selesai. Buyer akan melihat data ini.</div>
+              <textarea id="orderModalDeliveryData" 
+                        class="input" 
+                        rows="4" 
+                        placeholder="Contoh:&#10;Username: myuser&#10;Password: pass123&#10;&#10;Atau kode redeem: XXXX-XXXX-XXXX-XXXX"
+                        style="resize:none; font-family:monospace; margin-top:4px;"></textarea>
+            </div>
+            <!-- END FITUR BARU -->
+
+          </div>
+          <div class="modal-actions" style="margin-top:10px; display:flex; gap:10px; align-items:center; justify-content:flex-end">
+            <select id="orderModalStatus">
+              <option value="pending">PENDING</option>
+              <option value="paid">PAID</option>
+              <option value="proses">PROSES (Sedang Dikirim)</option>
+              <option value="selesai">SELESAI (Barang Diterima)</option>
+              <option value="canceled">CANCELED</option>
+            </select>
+            <button id="orderModalSave" class="primary">Simpan Status</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Methods -->
+      <div class="card" id="cardPayment">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>💳 Metode Pembayaran</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="small">Metode pembayaran ini akan dibaca realtime oleh index.html saat user checkout. Simpan QRIS sebagai gambar (Cloudinary).</div>
+        <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+          <div>
+            <label class="small">Nama Metode</label>
+            <input id="payLabel" class="input" placeholder="Dana / Gopay / SeaBank / Bank Jago / QRIS" />
+          </div>
+          <div>
+            <label class="small">Tipe</label>
+            <select id="payType" class="input">
+              <option value="ewallet">E-Wallet</option>
+              <option value="bank">Bank</option>
+              <option value="qris">QRIS</option>
+              <option value="other">Lainnya</option>
+            </select>
+          </div>
+          <div>
+            <label class="small">No / ID Pembayaran</label>
+            <input id="payAccount" class="input" placeholder="No rekening / No HP / ID" />
+          </div>
+          <div>
+            <label class="small">Atas Nama</label>
+            <input id="payHolder" class="input" placeholder="Nama pemilik rekening" />
+          </div>
+          <div>
+            <label class="small">Urutan (Order)</label>
+            <input id="payOrder" class="input" type="number" placeholder="contoh: 10" />
+          </div>
+          <div style="display:flex;align-items:end;gap:12px;flex-wrap:wrap">
+            <label class="small" style="display:flex;align-items:center;gap:8px;margin:0">
+              <input id="payActive" type="checkbox" checked /> Aktif
+            </label>
+            <span class="small" id="payEditHint" style="opacity:.8"></span>
+          </div>
+        </div>
+        <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+          <div>
+            <label class="small">URL QRIS (opsional)</label>
+            <input id="payQrisUrl" class="input" placeholder="https://res.cloudinary.com/.../qris.png" />
+          </div>
+          <div>
+            <label class="small">Upload QRIS (opsional, max 10MB)</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <input id="payQrisFile" class="input" type="file" accept="image/*" />
+              <button id="payUploadQrisBtn" class="btn secondary" type="button">Upload</button>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+          <button id="paySaveBtn" class="btn primary" type="button">Tambah</button>
+          <button id="payResetBtn" class="btn secondary" type="button">Reset</button>
+        </div>
+        <div class="table-wrap" style="margin-top:12px">
+          <table>
+            <thead>
+              <tr>
+                <th>Nama</th>
+                <th>Tipe</th>
+                <th>No/ID</th>
+                <th>Atas Nama</th>
+                <th class="numeric">Order</th>
+                <th class="numeric">Aktif</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="paymentTableBody">
+              <tr><td colspan="7" style="color:var(--muted);padding:12px">Memuat...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        </div><!-- end card-content -->
+      </div>
+
+      <!-- Produk -->
+      <div class="card" id="cardProducts">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>📦 Daftar Produk</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="tabs" id="adminTabs">
+          <button class="tab active" data-cat="all">✨ Semua</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <select id="adminSort" style="padding:8px;border-radius:8px;background:transparent;color:var(--text);border:1px solid rgba(255,255,255,0.06);min-width:160px">
+            <option value="default">Default (group by kategori)</option>
+            <option value="price_asc">Harga: Termurah → Termahal</option>
+            <option value="price_desc">Harga: Termahal → Termurah</option>
+            <option value="name_asc">Nama: A → Z</option>
+            <option value="name_desc">Nama: Z → A</option>
+          </select>
+          <input id="adminSearch" placeholder="🔍 Cari produk (nama/harga/stok/kategori)..." style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)"/>
+        </div>
+        <div class="table-wrap" style="margin-top:12px;max-height:420px;overflow:auto">
+          <table>
+            <thead><tr><th>Produk</th><th>Sub Kategori</th><th>Harga</th><th>Stok</th><th>Status</th><th>Aksi</th></tr></thead>
+            <tbody id="adminTableBody"></tbody>
+          </table>
+        </div>
+        </div><!-- end card-content -->
+      </div>
+      
+      <!-- Kategori Utama -->
+      <div class="card" id="mainCategoryCard">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>🗂️ Kategori Utama</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="small">Kategori Utama = game/brand besar (FF, ML, Roblox, Blox Fruits, dll). Data lama "Kategori" sekarang diperlakukan sebagai <b>Sub Kategori</b> (koleksi produk tidak dipindah).</div>
+        <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+          <input id="mainKey" placeholder="Key (lowercase, tanpa spasi — contoh: roblox)" style="flex:1;min-width:210px" />
+          <input id="mainLabel" placeholder="Label (contoh: Roblox)" style="flex:1;min-width:180px" />
+          <input id="mainOrder" type="number" placeholder="Order" style="width:110px" />
+          <label class="small" style="display:flex;align-items:center;gap:6px">
+            <input id="mainActive" type="checkbox" checked />
+            Aktif
+          </label>
+          <button id="createMainBtn" class="primary">➕ Buat / Update</button>
+        </div>
+        <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+          <label class="secondary" style="padding:8px 12px;cursor:pointer">📤 Upload Ikon Kategori Utama (opsional)
+            <input id="mainIconFile" type="file" accept="image/*" style="display:none"/>
+          </label>
+          <input id="mainIconUrl" placeholder="Atau URL ikon (opsional)" style="flex:1;min-width:200px"/>
+        </div>
+        <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+          <select id="mainSelect" style="flex:1;min-width:220px"></select>
+          <button id="saveMainMapBtn" class="primary" style="background:#5b8cff">💾 Simpan Mapping</button>
+          <button id="deleteMainBtn" class="danger">🗑️ Hapus</button>
+        </div>
+        <div style="margin-top:12px">
+          <div class="small"><b>Mapping Sub Kategori</b> (pilih sub kategori data lama yang masuk ke kategori utama terpilih):</div>
+          <div id="mainSubList" class="chipbox" style="margin-top:8px; display:flex;flex-wrap:wrap;gap:8px;"></div>
+          <div class="small" style="margin-top:8px;color:var(--muted)">Catatan: mapping ini tidak memindahkan produk. Index publik akan memakai mapping ini untuk menampilkan “Kategori Utama → Sub Kategori → Produk”.</div>
+        </div>
+        </div><!-- end card-content -->
+      </div>
+
+      <!-- Alat Sub Kategori (Data Lama) -->
+      <div class="card" id="cardSubTools">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3>⚙️ Alat Sub Kategori (Data Lama)</h3>
+          <div class="collapse-toggle">▼</div>
+        </div>
+        <div class="card-content">
+          <div class="row" style="margin-top:8px">
+          <label class="small">Pilih sub kategori:</label>
+          <select id="toolsCategory" style="flex:1"></select>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="renameCategoryBtn" class="primary">✏️ Edit Label</button>
+          <button id="migrateCategoryBtn" class="primary" style="background:#5b8cff">🔁 Migrate Key</button>
+          <button id="deleteCategoryBtn" class="danger">🗑️ Hapus Sub Kategori</button>
+        </div>
+        <div class="small" style="margin-top:8px">Migrasi memindahkan dokumen produk antar collection. File gambar ada di Cloudinary (URL tetap valid).</div>
+        </div><!-- end card-content -->
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Edit product modal -->
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-hidden="true">
+    <div class="modal" role="document" aria-modal="true">
+      <h3>Edit Produk</h3>
+      <div class="modal-body">
+        <div class="row">
+          <input id="editName" placeholder="Nama produk" style="flex:1"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="editPrice" placeholder="Harga" style="flex:1"/>
+          <input id="editStock" placeholder="Stock" style="width:140px"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <select id="editCategory" style="flex:1"></select>
+          <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="editAvailable"/> Available</label>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <textarea id="editDescription" placeholder="Deskripsi (opsional)" style="flex:1;min-height:78px"></textarea>
+        </div>
+        <!-- Diskon (Edit) -->
+        <div class="row" style="margin-top:8px">
+          <input id="editDiscountPercent" type="number" min="0" max="100" placeholder="Diskon % (0-100)" style="width:170px"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="editDiscountStart" type="datetime-local" style="flex:1" placeholder="Mulai"/>
+          <input id="editDiscountEnd" type="datetime-local" style="flex:1" placeholder="Selesai"/>
+        </div>
+        <div style="margin-top:8px">
+          <label class="small">Gambar saat ini:</label>
+          <img id="editImagePreview" class="img-preview" style="display:none" alt="Preview edit"/>
+          <div class="row" style="margin-top:8px">
+            <label class="secondary" style="padding:8px 12px;cursor:pointer">📤 Upload gambar baru
+              <input id="editImageFile" type="file" accept="image/*" style="display:none"/>
+            </label>
+            <input id="editImageUrl" placeholder="Atau masukkan URL gambar" style="flex:1"/>
+          </div>
+          <div class="small" style="margin-top:6px">Biarkan kosong jika tidak ingin mengubah gambar. Jika mengganti kategori, produk akan dipindahkan.</div>
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+        <button id="modalCancel" class="muted">Batal</button>
+        <button id="modalSave" class="primary">Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Firebase & Script -->
+  
+
+  <!-- Upload preview safety overlay -->
+  <script id="admin-upload-safety-overlay">
+  (function(){
+    'use strict';
+    try{
+      function toast(msg, ms){ try{ if(typeof showToast2==='function') showToast2(msg, ms||2200); }catch(e){} }
+      function nearestPreviewEl(from){
+        let node = from.parentElement;
+        for(let depth=0; node && depth<5; depth++, node=node.parentElement){
+          const cands = node.querySelectorAll('img');
+          for(const img of cands){
+            const id=(img.id||'').toLowerCase();
+            const cls=(img.className||'').toLowerCase();
+            if(id.includes('preview') || cls.includes('preview')) return img;
+          }
+        }
+        return document.getElementById('imagePreview') || document.getElementById('editImagePreview') || document.getElementById('welcomePreview') || null;
+      }
+      function setPreview(img, url){
+        if(!img) return;
+        const cur = img.getAttribute('src')||'';
+        if(/^https?:/.test(cur)) return;
+        img.setAttribute('decoding','async');
+        img.setAttribute('referrerpolicy','no-referrer');
+        img.src = url;
+        img.onload = ()=>{ try{ URL.revokeObjectURL(url); }catch(e){} };
+      }
+      function handleChange(e){
+        const input = e.currentTarget;
+        const file = (input.files && input.files[0]) || null;
+        if(!file) return;
+        if(file.size > 10*1024*1024){ toast('Ukuran gambar besar (>10MB). Disarankan lebih kecil agar tidak lag.'); }
+        try{
+          const blobUrl = URL.createObjectURL(file);
+          const img = nearestPreviewEl(input);
+          setPreview(img, blobUrl);
+        }catch(err){ console.warn('preview objectURL failed', err); }
+      }
+      function bindAll(){
+        document.querySelectorAll('input[type="file"]').forEach(inp=>{
+          if(inp.__uploadGuardBound) return;
+          inp.addEventListener('change', handleChange);
+          inp.__uploadGuardBound = true;
+        });
+      }
+      document.addEventListener('DOMContentLoaded', bindAll);
+      bindAll();
+      const obs = new MutationObserver(bindAll);
+      obs.observe(document.documentElement, { childList:true, subtree:true });
+    }catch(e){ console.error('upload safety overlay error', e); }
+  })();
+  </script>
+
+
+<script type="module" src="admin.js"></script>
+</body>
+</html>
